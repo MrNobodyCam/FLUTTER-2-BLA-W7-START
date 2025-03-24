@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:week_3_blabla_project/provider/async_value.dart';
-import 'package:week_3_blabla_project/provider/ride_pref_provider.dart';
 import 'package:week_3_blabla_project/ui/widgets/errors/bla_error_screen.dart';
 
 import '../../../model/ride/ride_pref.dart';
 import '../../theme/theme.dart';
 
 import '../../../utils/animations_util.dart';
+import '../provider/async_value.dart';
+import '../provider/ride_pref_provider.dart';
 import '../rides/rides_screen.dart';
 import 'widgets/ride_pref_form.dart';
 import 'widgets/ride_pref_history_tile.dart';
@@ -75,8 +75,8 @@ class RidePrefScreen extends StatelessWidget {
                         itemCount: preferences.length,
                         itemBuilder: (ctx, index) => RidePrefHistoryTile(
                           ridePref: preferences[index],
-                          onPressed: () => onRidePrefSelected(
-                              context, pastPreferences.data![index]),
+                          onPressed: () =>
+                              onRidePrefSelected(context, preferences[index]),
                         ),
                       ),
                     ),
