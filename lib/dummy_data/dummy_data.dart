@@ -58,7 +58,7 @@ const List<Location> fakeLocations = [
 // Fake Ride Preferences
 List<RidePreference> fakeRidePrefs = [
   RidePreference(
-    departure: fakeLocations[0], // London
+    departure: fakeLocations[10], // London
     departureDate: DateTime.now().add(Duration(days: 1)), // Tomorrow
     arrival: fakeLocations[3], // Paris
     requestedSeats: 2,
