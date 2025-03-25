@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:week_3_blabla_project/model/location/locations.dart';
-
-import '../../../service/locations_service.dart';
+import '../../screens/provider/async_value.dart';
+import '../../screens/provider/location_provider.dart';
 import '../../theme/theme.dart';
 
-///
-/// This full-screen modal is in charge of providing (if confirmed) a selected location.
-///
 class BlaLocationPicker extends StatefulWidget {
   final Location?
-      initLocation; // The picker can be triguer with an existing location name
+      initLocation; // The picker can be triggered with an existing location
 
   const BlaLocationPicker({super.key, this.initLocation});
 
@@ -20,17 +18,20 @@ class BlaLocationPicker extends StatefulWidget {
 class _BlaLocationPickerState extends State<BlaLocationPicker> {
   List<Location> filteredLocations = [];
 
-  // ----------------------------------
-  // Initialize the Form attributes
-  // ----------------------------------
-
   @override
   void initState() {
     super.initState();
 
+    // Initialize filtered locations with the initial location if provided
     if (widget.initLocation != null) {
       String city = widget.initLocation!.name;
-      filteredLocations = LocationsService.instance.getLocationsFor(city);
+      final locationProvider =
+          Provider.of<LocationProvider>(context, listen: false);
+      filteredLocations = locationProvider.locations.data
+              ?.where((location) =>
+                  location.name.toLowerCase().contains(city.toLowerCase()))
+              .toList() ??
+          [];
     }
   }
 
@@ -43,50 +44,72 @@ class _BlaLocationPickerState extends State<BlaLocationPicker> {
   }
 
   void onSearchChanged(String searchText) {
-    List<Location> newSelection = [];
-
     if (searchText.length > 1) {
-      // We start to search from 2 characters only.
-      newSelection = LocationsService.instance.getLocationsFor(searchText);
+      // Filter locations dynamically based on the search input
+      final locationProvider =
+          Provider.of<LocationProvider>(context, listen: false);
+      setState(() {
+        filteredLocations = locationProvider.locations.data
+                ?.where((location) => location.name
+                    .toLowerCase()
+                    .contains(searchText.toLowerCase()))
+                .toList() ??
+            [];
+      });
+    } else {
+      setState(() {
+        filteredLocations = [];
+      });
     }
-
-    setState(() {
-      filteredLocations = newSelection;
-    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        body: Padding(
-      padding: const EdgeInsets.only(
-          left: BlaSpacings.m, right: BlaSpacings.m, top: BlaSpacings.s),
-      child: Column(
-        children: [
-          // Top search Search bar
-          BlaSearchBar(
-            onBackPressed: onBackSelected,
-            onSearchChanged: onSearchChanged,
-          ),
+    final locationProvider = Provider.of<LocationProvider>(context);
+    final locationsState = locationProvider.locations;
 
-          Expanded(
-            child: ListView.builder(
-              itemCount: filteredLocations.length,
-              itemBuilder: (ctx, index) => LocationTile(
-                location: filteredLocations[index],
-                onSelected: onLocationSelected,
+    return Scaffold(
+      body: Padding(
+        padding: const EdgeInsets.only(
+            left: BlaSpacings.m, right: BlaSpacings.m, top: BlaSpacings.s),
+        child: Column(
+          children: [
+            // Top search bar
+            BlaSearchBar(
+              onBackPressed: onBackSelected,
+              onSearchChanged: onSearchChanged,
+            ),
+
+            Expanded(
+              child: Builder(
+                builder: (context) {
+                  if (locationsState.state == AsyncValueState.loading) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (locationsState.state == AsyncValueState.error) {
+                    return const Center(
+                        child: Text('Failed to load locations'));
+                  } else if (locationsState.state == AsyncValueState.success) {
+                    // Display filtered locations
+                    return ListView.builder(
+                      itemCount: filteredLocations.length,
+                      itemBuilder: (ctx, index) => LocationTile(
+                        location: filteredLocations[index],
+                        onSelected: onLocationSelected,
+                      ),
+                    );
+                  }
+
+                  return const Center(child: Text('Unexpected state'));
+                },
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ));
+    );
   }
 }
 
-///
-/// This tile represents an item in the list of past entered ride inputs
-///s
 class LocationTile extends StatelessWidget {
   final Location location;
   final Function(Location location) onSelected;
@@ -115,10 +138,6 @@ class LocationTile extends StatelessWidget {
   }
 }
 
-///
-///  The Search bar combines the search input + the navigation back button
-///  A clear button appears when search contains some text.
-///
 class BlaSearchBar extends StatefulWidget {
   const BlaSearchBar(
       {super.key, required this.onSearchChanged, required this.onBackPressed});
@@ -137,10 +156,10 @@ class _BlaSearchBarState extends State<BlaSearchBar> {
   bool get searchIsNotEmpty => _controller.text.isNotEmpty;
 
   void onChanged(String newText) {
-    // 1 - Notity the listener
+    // Notify the listener
     widget.onSearchChanged(newText);
 
-    // 2 - Update the cross icon
+    // Update the clear button visibility
     setState(() {});
   }
 

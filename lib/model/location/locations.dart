@@ -5,11 +5,18 @@ enum Country {
   france('France'),
   uk('United Kingdom'),
   cambodia('Cambodia'),
-  spain('Spain');
+  spain('Spain'),
+  thailand('Thailand');
 
   final String name;
 
   const Country(this.name);
+
+  static Country fromString(String value) {
+    return Country.values.firstWhere(
+      (e) => e.name.toLowerCase() == value.toLowerCase(),
+    );
+  }
 }
 
 ///
